@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Click the Button</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    #scoreList {
+      width: 200px;
+      padding: 10px;
+      background-color: #fff;
+      border-right: 2px solid #333;
+      overflow-y: auto;
+    }
+    #gameContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #gameArea {
+      width: 80%;
+      height: 80%;
+      border: 2px solid #333;
+      position: relative;
+      background-color: #fff;
+      overflow: hidden;
+      display: none;
+    }
+    .button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+      user-select: none;
+    }
+    #redButton { background-color: #ff4444; }
+    #yellowButton { background-color: #ffff00; }
+    #blueButton { background-color: #0000ff; }
+    #brownButton { background-color: #8b4513; }
+    #greenButton { background-color: #008000; }
+    #purpleButton { background-color: #800080; }
+    #orangeButton { background-color: #ffa500; }
+    #blackButton { background-color: #000000; }
+    #whiteButton { background-color: #ffffff; border: 1px solid #333; }
+    #yellowButton2 { background-color: #ffff00; }
+    #blueButton2 { background-color: #0000ff; }
+    #score {
+      font-size: 24px;
+      margin: 10px 0;
+    }
+    #timer {
+      font-size: 24px;
+      color: #333;
+    }
+    #instruction {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+    }
+    #startButton {
+      font-size: 24px;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #countdown {
+      font-size: 48px;
+      margin: 20px;
+      display: none;
+    }
+    #gameOver {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    #gameOver img {
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+    #retryButton {
+      font-size: 24px;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreList">
+    <h2>トップスコア</h2>
+    <ul id="scoreItems"></ul>
+  </div>
+  <div id="gameContainer">
+    <h1>Click the Button</h1>
+    <button id="startButton">スタート</button>
+    <div id="countdown"></div>
+    <div id="score" style="display: none;">スコア: 0</div>
+    <div id="timer" style="display: none;">残り時間: 30</div>
+    <div id="gameArea">
+      <div id="instruction">赤色の丸をクリックしろ</div>
+      <div id="redButton" class="button"></div>
+      <div id="yellowButton" class="button" style="display: none;"></div>
+      <div id="blueButton" class="button" style="display: none;"></div>
+      <div id="brownButton" class="button" style="display: none;"></div>
+      <div id="greenButton" class="button" style="display: none;"></div>
+      <div id="yellowButton2" class="button" style="display: none;"></div>
+      <div id="blueButton2" class="button" style="display: none;"></div>
+      <div id="purpleButton" class="button" style="display: none;"></div>
+      <div id="orangeButton" class="button" style="display: none;"></div>
+      <div id="blackButton" class="button" style="display: none;"></div>
+      <div id="whiteButton" class="button" style="display: none;"></div>
+    </div>
+    <div id="gameOver">
+      <img src="ne.jpg" alt="Game Over">
+      <button id="retryButton">再挑戦</button>
+    </div>
+  </div>
+
+  <script>
+    const buttons = {
+      red: document.getElementById('redButton'),
+      yellow: document.getElementById('yellowButton'),
+      blue: document.getElementById('blueButton'),
+      brown: document.getElementById('brownButton'),
+      green: document.getElementById('greenButton'),
+      purple: document.getElementById('purpleButton'),
+      orange: document.getElementById('orangeButton'),
+      black: document.getElementById('blackButton'),
+      white: document.getElementById('whiteButton'),
+      yellow2: document.getElementById('yellowButton2'),
+      blue2: document.getElementById('blueButton2')
+    };
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startButton = document.getElementById('startButton');
+    const countdownDisplay = document.getElementById('countdown');
+    const gameOverScreen = document.getElementById('gameOver');
+    const retryButton = document.getElementById('retryButton');
+    const scoreItems = document.getElementById('scoreItems');
+
+    let score = 0;
+    let timeLeft = 30;
+    let gameActive = false;
+    let countdown = 3;
+    let pastScores = [];
+    let timerInterval = null;
+
+    function moveButton(button) {
+      if (!gameActive) return;
+      const maxX = gameArea.clientWidth - button.clientWidth;
+      const maxY = gameArea.clientHeight - button.clientHeight; // antisense を maxY に修正
+      const newX = Math.random() * maxX;
+      const newY = Math.random() * maxY; // maxY を使用
+      button.style.left = `${newX}px`;
+      button.style.top = `${newY}px`;
+    }
+
+    function moveAllVisibleButtons() {
+      Object.values(buttons).forEach(button => {
+        if (button && button.style.display !== 'none') {
+          moveButton(button);
+        }
+      });
+    }
+
+    buttons.red.addEventListener('click', () => {
+      if (!gameActive) return;
+      score++;
+      scoreDisplay.textContent = `スコア: ${score}`;
+      moveAllVisibleButtons();
+    });
+
+    [buttons.yellow, buttons.blue, buttons.brown, buttons.green, buttons.purple, buttons.orange, buttons.black, buttons.white, buttons.yellow2, buttons.blue2].forEach(button => {
+      if (button) {
+        button.addEventListener('click', () => {
+          if (!gameActive) return;
+          score = Math.max(0, score - 1);
+          scoreDisplay.textContent = `スコア: ${score}`;
+          moveAllVisibleButtons();
+        });
+      }
+    });
+
+    function resetGame() {
+      gameActive = false;
+      score = 0;
+      timeLeft = 30;
+      scoreDisplay.textContent = `スコア: ${score}`;
+      timerDisplay.textContent = `残り時間: ${timeLeft}`;
+      Object.values(buttons).forEach(button => {
+        if (button) button.style.display = 'none';
+      });
+      gameArea.style.display = 'none';
+      scoreDisplay.style.display = 'none';
+      timerDisplay.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      startButton.style.display = 'block';
+      countdownDisplay.style.display = 'none';
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function startGame() {
+      resetGame();
+      startButton.style.display = 'none';
+      countdownDisplay.style.display = 'block';
+      countdown = 3;
+      countdownDisplay.textContent = countdown;
+
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          countdownDisplay.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          countdownDisplay.style.display = 'none';
+          gameArea.style.display = 'block';
+          scoreDisplay.style.display = 'block';
+          timerDisplay.style.display = 'block';
+          gameActive = true;
+          buttons.red.style.display = 'block';
+          moveButton(buttons.red); // ゲーム開始時に赤い丸を移動
+          timerInterval = setInterval(updateTimer, 1000);
+        }
+      }, 1000);
+    }
+
+    function updateTimer() {
+      if (timeLeft <= 0) {
+        gameActive = false;
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        timerDisplay.textContent = 'ゲーム終了！';
+        Object.values(buttons).forEach(button => {
+          if (button) button.style.display = 'none';
+        });
+        pastScores.push(score);
+        pastScores.sort((a, b) => b - a);
+        pastScores = pastScores.slice(0, 3);
+        localStorage.setItem('pastScores', JSON.stringify(pastScores));
+        updateScoreList();
+        if (pastScores.length > 0 && score < Math.max(...pastScores)) {
+          gameOverScreen.style.display = 'flex';
+        } else {
+          alert(`ゲーム終了！ 最終スコア: ${score}`);
+          resetGame();
+        }
+        return;
+      }
+
+      if (timeLeft <= 25) {
+        buttons.yellow.style.display = 'block';
+        buttons.blue.style.display = 'block';
+      }
+      if (timeLeft <= 20) {
+        buttons.brown.style.display = 'block';
+        buttons.green.style.display = 'block';
+      }
+      if (timeLeft <= 15) {
+        buttons.yellow2.style.display = 'block';
+        buttons.blue2.style.display = 'block';
+      }
+      if (timeLeft <= 10) {
+        buttons.purple.style.display = 'block';
+        buttons.orange.style.display = 'block';
+      }
+      if (timeLeft <= 5) {
+        buttons.black.style.display = 'block';
+        buttons.white.style.display = 'block';
+      }
+
+      timeLeft--;
+      timerDisplay.textContent = `残り時間: ${timeLeft}`;
+    }
+
+    function updateScoreList() {
+      scoreItems.innerHTML = '';
+      if (pastScores.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'スコアなし';
+        scoreItems.appendChild(li);
+      } else {
+        pastScores.forEach((s, index) => {
+          const li = document.createElement('li');
+          li.textContent = `${index + 1}. ${s}`;
+          scoreItems.appendChild(li);
+        });
+      }
+    }
+
+    startButton.addEventListener('click', startGame);
+    retryButton.addEventListener('click', resetGame);
+
+    // 初期スコアリストを空に設定
+    updateScoreList();
+  </script>
+</body>
+</html>
